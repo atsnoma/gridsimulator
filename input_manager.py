@@ -27,7 +27,9 @@ class InputManager:
         return self.hovered_tile
 
     def handle_click(self, units):
+        ## Get the tile that the mouse is hovering over
         tile_x, tile_y = self.hovered_tile
+        ## If no unit is selected and a valid unit is on the tile, make it selected
         if self.selected_unit is None:
             for u in units:
                 if u.x == tile_x and u.y == tile_y:
@@ -35,7 +37,18 @@ class InputManager:
                         u.selected = True
                         self.selected_unit = u
                         break
+        ## If a unit IS selected, check that a valid unit is on the tile, check if valid target, and ranged attack
         else:
+            for u in units:
+                if u.x == tile_x and u.y == tile_y:
+                    if self.selected_unit.alignment != u.alignment:
+                        self.selected_unit.basic_attack(u)
+                        self.turn_manager.mark_unit_acted(self.selected_unit)
+                        self.turn_manager.check_end_turn()
+                        self.selected_unit.selected = False
+                        self.selected_unit = None
+                        return
+        ## If unit is selected and clicks a valid tile, move it and end turn. Otherwise nothing happens.                
             valid_tiles = self.selected_unit.get_move_tiles(config.GRID_WIDTH, config.GRID_HEIGHT)
             if (tile_x, tile_y) in valid_tiles:
                 self.selected_unit.x = tile_x

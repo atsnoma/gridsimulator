@@ -21,6 +21,7 @@ class Unit:
         self.x = x
         self.y = y
         self.alignment = alignment
+        self.health = config.BASEHP
         self.selected = False
         self.move_range = move_range
 
@@ -48,3 +49,13 @@ class Unit:
                     if 0 <= tx < grid_width and 0 <= ty < grid_height:
                         tiles.append((tx, ty))
         return tiles
+    
+    def basic_attack(self, target):
+        damage = 3  # flat damage for now
+        target.health -= damage
+        if target.health <= 0:
+            target.health = 0  # optional clamp
+        print(f"Target has {target.health} remaining!")
+        
+
+
