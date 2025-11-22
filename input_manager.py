@@ -32,6 +32,8 @@ class InputManager:
         ## If no unit is selected and a valid unit is on the tile, make it selected
         if self.selected_unit is None:
             for u in units:
+                if not u.alive:
+                    continue  # skip dead units
                 if u.x == tile_x and u.y == tile_y:
                     if self.turn_manager.is_unit_active(u):
                         u.selected = True
@@ -40,6 +42,8 @@ class InputManager:
         ## If a unit IS selected, check that a valid unit is on the tile, check if valid target, and ranged attack
         else:
             for u in units:
+                if not u.alive:
+                    continue  # skip dead units
                 if u.x == tile_x and u.y == tile_y:
                     if self.selected_unit.alignment != u.alignment:
                         self.selected_unit.basic_attack(u)

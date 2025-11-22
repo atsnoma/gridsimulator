@@ -55,4 +55,9 @@ class TurnManager:
                 if u not in self.units_acted:
                     all_acted = False
         if all_acted:
+            self.remove_dead_units(self.player_units, self.enemy_units)
             self.end_turn()
+
+    def remove_dead_units(self, player_units, enemy_units):
+        player_units[:] = [u for u in player_units if u.alive]
+        enemy_units[:] = [u for u in enemy_units if u.alive]

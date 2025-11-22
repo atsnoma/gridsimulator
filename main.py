@@ -13,7 +13,7 @@ Description: This module demonstrates:
 
 import pygame
 from grid import Grid
-from unit import Unit
+from unit import Unit, Archer
 from input_manager import InputManager
 from turn_manager import TurnManager
 import config
@@ -25,13 +25,13 @@ clock = pygame.time.Clock()
 
 ## Create Units
 player_units = [
-    Unit(1, 1),
-    Unit(2, 1),
+    Archer(1, 1),
+    Archer(2, 1),
 ]
 
 enemy_units = [
-    Unit(5, 5, config.ENEMY),
-    Unit(6, 5, config.ENEMY),
+    Archer(5, 5, config.ENEMY),
+    Archer(6, 5, config.ENEMY),
 ]
 
 # All units together for InputManager drawing / clicks
@@ -54,7 +54,8 @@ while running:
     grid.draw(screen)
     input_manager.draw_hover(screen)
     for u in units:
-        u.draw(screen)
+        if u.alive:
+            u.draw(screen)
     if input_manager.selected_unit:
         input_manager.draw_move_range(screen, input_manager.selected_unit)
     pygame.display.flip()

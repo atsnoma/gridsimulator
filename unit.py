@@ -16,14 +16,17 @@ import config
 
 ## Unit Class
 class Unit:
-    def __init__(self, x, y, alignment=config.ALLY, move_range=3):
+    def __init__(self, x, y, alignment, name):
         ## Determines unit spawn location, color, movement range
         self.x = x
         self.y = y
         self.alignment = alignment
-        self.health = config.BASEHP
+        self.name = name
+        self.health = config.BASEHEALTH
+        self.alive = True
         self.selected = False
-        self.move_range = move_range
+        self.attack_range = config.BASERANGE
+        self.move_range = config.BASEMOVE
 
     def draw(self, screen, tile_size=config.TILE_SIZE):
         ## Draws the unit, changes color based on selection or not.
@@ -55,7 +58,20 @@ class Unit:
         target.health -= damage
         if target.health <= 0:
             target.health = 0  # optional clamp
-        print(f"Target has {target.health} remaining!")
+            target.unit_death()
+        else:
+            print(f"{target.name} has {target.health} remaining!")
+
+            
+    
+    def unit_death(self):
+        print(f"{self.name} has died!")
+        self.alive = False  # mark as dead
         
-
-
+## Subclass for Archer Unit
+class Archer(Unit):
+    def __init__(self, x, y, alignment=config.ALLY, name="Archer"):
+        super().__init__(x, y, alignment, name)
+        self.move_range = config.BASEMOVE - 1
+        self.attack_range = config.BASERANGE + 2
+        self.health = config.BASEHEALTH - 2
