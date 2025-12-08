@@ -27,6 +27,7 @@ class Unit:
         self.selected = False
         self.attack_range = config.BASERANGE
         self.move_range = config.BASEMOVE
+        self.original_position = (x, y)
 
     def draw(self, screen, tile_size=config.TILE_SIZE):
         ## Draws the unit, changes color based on selection or not.
@@ -53,6 +54,30 @@ class Unit:
                         tiles.append((tx, ty))
         return tiles
     
+    def get_attack_tiles(self, grid_width=config.GRID_WIDTH, grid_height=config.GRID_HEIGHT):
+        tiles = []
+        for dx in range(-self.attack_range, self.attack_range + 1):
+            for dy in range(-self.attack_range, self.attack_range + 1):
+                if abs(dx) + abs(dy) <= self.attack_range:
+                    tx = self.x + dx
+                    ty = self.y + dy
+                    if 0 <= tx < grid_width and 0 <= ty < grid_height:
+                        tiles.append((tx, ty))
+        return tiles
+    
+    def move_unit(self, tile_x, tile_y):
+        self.x = tile_x
+        self.y = tile_y
+
+    def handle_action(self, target=None, action_type="wait"):
+        if action_type == "attack" and target:
+            self.basic_attack(target)
+        elif action_type == "cancel_move":
+            self.x, self.y = self.original_position
+        elif action_type == "wait":
+            return
+
+
     def basic_attack(self, target):
         damage = 3  # flat damage for now
         target.health -= damage

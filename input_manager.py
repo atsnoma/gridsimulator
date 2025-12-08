@@ -17,6 +17,7 @@ import config
 class InputManager:
     def __init__(self, turn_manager):
         self.turn_manager = turn_manager
+        self.phase = "move"
         self.selected_unit = None
         self.hovered_tile = (None, None)
 
@@ -33,34 +34,84 @@ class InputManager:
         if self.selected_unit is None:
             for u in units:
                 if not u.alive:
-                    continue  # skip dead units
+                    continue  # skip units that acted or are dead
                 if u.x == tile_x and u.y == tile_y:
                     if self.turn_manager.is_unit_active(u):
                         u.selected = True
                         self.selected_unit = u
-                        break
-        ## If a unit IS selected, check that a valid unit is on the tile, check if valid target, and ranged attack
-        else:
-            for u in units:
-                if not u.alive:
-                    continue  # skip dead units
-                if u.x == tile_x and u.y == tile_y:
-                    if self.selected_unit.alignment != u.alignment:
-                        self.selected_unit.basic_attack(u)
-                        self.turn_manager.mark_unit_acted(self.selected_unit)
-                        self.turn_manager.check_end_turn()
-                        self.selected_unit.selected = False
-                        self.selected_unit = None
+                        self.phase = "move"
+                        self.selected_unit.original_position = (tile_x, tile_y)
                         return
-        ## If unit is selected and clicks a valid tile, move it and end turn. Otherwise nothing happens.                
-            valid_tiles = self.selected_unit.get_move_tiles(config.GRID_WIDTH, config.GRID_HEIGHT)
-            if (tile_x, tile_y) in valid_tiles:
-                self.selected_unit.x = tile_x
-                self.selected_unit.y = tile_y
+            return
+
+        ## If a unit IS selected, remove tiles containing a unit from valid move spaces, then allow moves
+        if self.phase == "move":
+            all_moves = self.selected_unit.get_move_tiles(config.GRID_WIDTH, config.GRID_HEIGHT)
+            valid_move_tiles = []
+            for tile in all_moves:
+                blocked = False
+                for u in units:
+                    if u.alive and (u.x, u.y) == tile and u is not self.selected_unit:
+                        blocked = True
+                        break
+                if not blocked:
+                    valid_move_tiles.append(tile)
+            
+            if (tile_x, tile_y) in valid_move_tiles:
+                # If legal, move the unit and send to action phase
+                self.selected_unit.move_unit(tile_x, tile_y)
+                self.phase = "action"
+                return
+            else:
+                # Clicked invalid tile → cancel selection, revert if moved
+                self.selected_unit.handle_action(action_type="cancel_move")
+                self.selected_unit.selected = False
+                self.selected_unit = None
+                self.phase = "move"
+                return
+        
+        if self.phase == "action":
+            # Set target variable and get valid attack tiles
+            target = None
+            valid_attack_tiles = self.selected_unit.get_attack_tiles(config.GRID_WIDTH, config.GRID_HEIGHT)
+
+            for u in units:
+                # If the clicked unit for action is not an ally, then it will be accepted as a target
+                if u.alive and self.selected_unit.alignment != u.alignment:
+                    if (u.x, u.y) == (tile_x, tile_y) and (tile_x, tile_y,) in valid_attack_tiles:
+                            target = u
+                            break
+            if target:
+                self.selected_unit.handle_action(target=target, action_type="attack") # No menu yet, just straight attacks
                 self.turn_manager.mark_unit_acted(self.selected_unit)
                 self.turn_manager.check_end_turn()
-            self.selected_unit.selected = False
-            self.selected_unit = None
+                self.selected_unit.selected = False
+                self.selected_unit = None
+                self.phase = "move"
+                return
+            
+            elif (tile_x, tile_y) == (self.selected_unit.x, self.selected_unit.y):
+                # If clicking on self in action phase, passes the unit's turn.
+                self.selected_unit.handle_action(action_type="wait")
+                self.turn_manager.mark_unit_acted(self.selected_unit)
+                self.turn_manager.check_end_turn()
+                self.selected_unit.selected = False
+                self.selected_unit = None
+                self.phase = "move"
+                return
+            
+            else:
+                # If clicking on an invalid area, goes back to move selection
+                self.selected_unit.handle_action(action_type="cancel_move")
+                self.phase = "move"
+                return
+        ## If nothing clicked, nothing happens
+        print("Yes I exist")
+        self.turn_manager.mark_unit_acted(self.selected_unit)
+        self.turn_manager.check_end_turn()
+        self.selected_unit.selected = False
+        self.selected_unit = None
+        self.phase = "move"
             
 
     def draw_hover(self, screen):
@@ -73,18 +124,18 @@ class InputManager:
             )
             pygame.draw.rect(screen, config.HOVER_COLOR, rect, 3)
     
-    def draw_move_range(self, screen, unit):
-        ##Draw a highlight around all tiles a selected unit can move to.
-        if unit.selected:
-            move_tiles = unit.get_move_tiles()
-            for possiblex, possibley in move_tiles:
-                rect = pygame.Rect(
-                    possiblex * config.TILE_SIZE,
-                    possibley * config.TILE_SIZE,
-                    config.TILE_SIZE,
-                    config.TILE_SIZE
-                )
-                pygame.draw.rect(screen, (0, 100, 255), rect, 3)  # blue border
+    def draw_range(self, screen, unit):
+        ##Draw a highlight around all tiles a selected unit can move to or attack to.
+        if self.phase == "move":
+            tiles = unit.get_move_tiles(config.GRID_WIDTH, config.GRID_HEIGHT)
+            color = (0, 100, 255)
+        elif self.phase == "action":
+            tiles = unit.get_attack_tiles(config.GRID_WIDTH, config.GRID_HEIGHT)
+            color = (255, 100, 0)
+    
+        for tx, ty in tiles:
+            rect = pygame.Rect(tx * config.TILE_SIZE, ty * config.TILE_SIZE, config.TILE_SIZE, config.TILE_SIZE)
+            pygame.draw.rect(screen, color, rect, 3)  # blue border
 
     # Optional: process all events
     def process_events(self, units):

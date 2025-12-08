@@ -23,13 +23,25 @@ class TurnManager:
     
     def start_turn(self, team):
         ## Start new turn for team
+        ## Clears has_acted and has_moved flags, though only has_acted needs to be cleared
         self.current_team = team
         self.units_acted.clear()
+        if team == "player":
+            for u in self.player_units:
+                u.has_acted = False
+                u.has_moved = False
+        else:
+            for u in self.enemy_units:
+                u.has_acted = False
+                u.has_moved = False
         ## Animations here maybe
     
     def end_turn(self):
         ##Switch to the other team.
-        next_team = "enemy" if self.current_team == "player" else "player"
+        if self.current_team == "player": 
+            next_team = "enemy" 
+        else:
+            next_team = "player"
         self.start_turn(next_team)
 
     def is_unit_active(self, unit):
@@ -44,7 +56,9 @@ class TurnManager:
         ##Mark a unit as having finished its action.
         self.units_acted.add(unit)
 
+
     def check_end_turn(self):
+        self.remove_dead_units(self.player_units, self.enemy_units)
         all_acted = True
         if self.current_team == "player":
             for u in self.player_units:
@@ -55,7 +69,6 @@ class TurnManager:
                 if u not in self.units_acted:
                     all_acted = False
         if all_acted:
-            self.remove_dead_units(self.player_units, self.enemy_units)
             self.end_turn()
 
     def remove_dead_units(self, player_units, enemy_units):

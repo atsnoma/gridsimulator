@@ -1,9 +1,9 @@
 '''
 ***************************************************************************
 Filename: main.py
-Author: mafiaofplums
+Author: madyucky
 Date: 2025.11.21
-Modifications: mafiaofplums - 2025.11.21
+Modifications: madyucky - 2025.11.21
 Description: This module demonstrates:
 1) Integration of all other files for the game loop
 2) Need replace the Create Units block with importing whole levels
@@ -33,7 +33,6 @@ enemy_units = [
     Archer(5, 5, config.ENEMY),
     Archer(6, 5, config.ENEMY),
 ]
-
 # All units together for InputManager drawing / clicks
 all_units = player_units + enemy_units
 
@@ -57,6 +56,6 @@ while running:
         if u.alive:
             u.draw(screen)
     if input_manager.selected_unit:
-        input_manager.draw_move_range(screen, input_manager.selected_unit)
+        input_manager.draw_range(screen, input_manager.selected_unit)
     pygame.display.flip()
     clock.tick(config.FPS)
