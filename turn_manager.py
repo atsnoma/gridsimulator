@@ -26,14 +26,6 @@ class TurnManager:
         ## Clears has_acted and has_moved flags, though only has_acted needs to be cleared
         self.current_team = team
         self.units_acted.clear()
-        if team == "player":
-            for u in self.player_units:
-                u.has_acted = False
-                u.has_moved = False
-        else:
-            for u in self.enemy_units:
-                u.has_acted = False
-                u.has_moved = False
         ## Animations here maybe
     
     def end_turn(self):
